@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robot Teleoperation System - Remote Robot Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #121212;
+      color: #FFFFFF;
+      overflow-x: hidden;
+    }
+
+    /* Efecto Grid Técnico */
+    .tech-grid-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(41, 182, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(41, 182, 246, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Efecto Glow Radial en Esquinas */
+    .glow-effects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-effects::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(41, 182, 246, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .glow-effects::after {
+      content: '';
+      position: absolute;
+      bottom: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(41, 182, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* Navigation */
+    .floating-nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(30, 30, 30, 0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 20px 40px;
+      z-index: 1000;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .nav-logo img {
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 8px rgba(41, 182, 246, 0.5));
+    }
+
+    .nav-buttons {
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Hero Section - Centrado Vertical */
+    .landing-hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding-top: 80px;
+      padding-bottom: 80px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero-content {
+      max-width: 1200px;
+      width: 100%;
+      padding: 0 20px;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    /* Logo Container con Padding Superior */
+    .logo-container {
+      padding-top: 60px;
+      padding-bottom: 20px;
+      margin-bottom: 8px;
+    }
+
+    .logo-icon {
+      font-size: 4rem;
+      color: #29B6F6;
+      margin-bottom: 8px;
+      display: block;
+      text-shadow: 0 0 20px rgba(41, 182, 246, 0.5);
+    }
+
+    .logo-icon img {
+      display: block;
+      margin: 0 auto;
+      width: 120px;
+      height: 120px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 20px rgba(41, 182, 246, 0.5));
+    }
+
+    /* Título Principal */
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 16px;
+      background: linear-gradient(180deg, #FFFFFF 0%, #B0B0B0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.2;
+      animation: fadeInUp 0.8s ease-out;
+    }
+
+    /* Subtítulo con Fuente Monoespaciada */
+    .hero-subtitle {
+      font-size: 1.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #6C757D;
+      margin-bottom: 48px;
+      letter-spacing: 0.5px;
+      animation: fadeInUp 1s ease-out;
+    }
+
+    /* Card de Acceso Rápido */
+    .access-card {
+      background: #1E1E1E;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 500px;
+      margin: 0 auto 60px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      animation: fadeInUp 1.2s ease-out;
+    }
+
+    .access-card-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #FFFFFF;
+      margin-bottom: 24px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .access-card-description {
+      font-size: 0.95rem;
+      color: #B0B0B0;
+      margin-bottom: 32px;
+      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .hero-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .btn-primary-neon {
+      padding: 16px 32px;
+      background: #29B6F6;
+      color: #121212;
+      border: 2px solid #29B6F6;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 0 20px rgba(41, 182, 246, 0.3);
+    }
+
+    .btn-primary-neon:hover {
+      background: #29B6F6;
+      box-shadow: 0 0 30px rgba(41, 182, 246, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary-neon {
+      padding: 16px 32px;
+      background: transparent;
+      color: #FFFFFF;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-secondary-neon:hover {
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Features Grid */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 32px;
+      margin-top: 80px;
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 20px;
+    }
+
+    .feature-card {
+      background: #1E1E1E;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #29B6F6, #00E676, #FF9100);
+      transform: scaleX(0);
+      transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      border-color: rgba(255, 255, 255, 0.2);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .feature-card:hover::before {
+      transform: scaleX(1);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .feature-title {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .feature-description {
+      color: #B0B0B0;
+      line-height: 1.6;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Robots Showcase */
+    .robots-showcase {
+      margin-top: 80px;
+      padding: 60px 20px;
+      background: #1E1E1E;
+    }
+
+    .robots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      max-width: 1200px;
+      margin: 40px auto 0;
+    }
+
+    .robot-showcase-card {
+      background: #1E1E1E;
+      border-radius: 16px;
+      padding: 32px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+    }
+
+    .robot-showcase-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    .robot-icon-large {
+      font-size: 5rem;
+      margin-bottom: 20px;
+      display: block;
+    }
+
+    .section-title {
+      font-size: 2.5rem;
+      text-align: center;
+      margin-bottom: 16px;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .section-subtitle {
+      text-align: center;
+      color: #B0B0B0;
+      font-size: 1.2rem;
+      margin-bottom: 40px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Footer */
+    footer {
+      background: #121212;
+      padding: 40px 20px;
+      text-align: center;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero-title {
+        font-size: 2.5rem;
+      }
+      
+      .hero-subtitle {
+        font-size: 1rem;
+      }
+      
+      .floating-nav {
+        padding: 16px 20px;
+        flex-direction: column;
+        gap: 12px;
+      }
+      
+      .nav-buttons {
+        width: 100%;
+        justify-content: center;
+      }
+      
+      .access-card {
+        padding: 24px;
+      }
+
+      .logo-container {
+        padding-top: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Efectos de Fondo -->
+  <div class="tech-grid-bg"></div>
+  <div class="glow-effects"></div>
+
+  <!-- Navigation -->
+  <nav class="floating-nav">
+    <div class="nav-logo">
+      <img src="/images/robots/robot.png" alt="Robot"> Robot Control
+    </div>
+    <div class="nav-buttons">
+      <a href="/auth/login" class="btn-secondary-neon" style="padding: 8px 20px; font-size: 0.9rem;">
+        <i class="fas fa-sign-in-alt"></i> Sign In
+      </a>
+      <a href="/auth/register" class="btn-primary-neon" style="padding: 8px 20px; font-size: 0.9rem;">
+        <i class="fas fa-user-plus"></i> Sign Up
+      </a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="landing-hero">
+    <div class="hero-content">
+      <!-- Logo con Padding Superior -->
+      <div class="logo-container">
+        <span class="logo-icon">
+          <img src="/images/robots/robot.png" alt="Robot">
+        </span>
+      </div>
+
+      <!-- Título Principal con Degradado -->
+      <h1 class="hero-title">
+        Robot Teleoperation System
+      </h1>
+
+      <!-- Subtítulo con Fuente Monoespaciada -->
+      <p class="hero-subtitle">
+        Real-time robotic fleet control
+      </p>
+
+      <!-- Card de Acceso Rápido -->
+      <div class="access-card">
+        <h2 class="access-card-title">
+          <i class="fas fa-rocket"></i> Get Started
+        </h2>
+        <p class="access-card-description">
+          Access the most advanced remote control system for industrial robots. 
+          Manage your fleet from anywhere in the world.
+        </p>
+        <div class="hero-buttons">
+          <a href="/auth/register" class="btn-primary-neon">
+            <i class="fas fa-user-plus"></i> Create Account
+          </a>
+          <a href="/auth/login" class="btn-secondary-neon">
+            <i class="fas fa-sign-in-alt"></i> Sign In
+          </a>
+        </div>
+      </div>
+
+      <!-- Features -->
+      <div class="features-grid">
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #29B6F6;">🤖</span>
+          <h3 class="feature-title">Remote Control</h3>
+          <p class="feature-description">
+            Access and control robots in real-time from any device with internet connection
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #00E676;">📅</span>
+          <h3 class="feature-title">Reservation System</h3>
+          <p class="feature-description">
+            Schedule your work sessions in advance and manage your usage time efficiently
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #FF9100;">📊</span>
+          <h3 class="feature-title">Real-Time Analytics</h3>
+          <p class="feature-description">
+            Monitor your usage, session statistics and performance metrics in real-time
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #29B6F6;">🔒</span>
+          <h3 class="feature-title">Advanced Security</h3>
+          <p class="feature-description">
+            Granular permission system and secure authentication to protect your operations
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #00E676;">⚡</span>
+          <h3 class="feature-title">High Speed</h3>
+          <p class="feature-description">
+            Optimized interface for instant response and precise movement control
+          </p>
+        </div>
+        
+        <div class="feature-card">
+          <span class="feature-icon" style="color: #FF9100;">🌐</span>
+          <h3 class="feature-title">Global Access</h3>
+          <p class="feature-description">
+            Connect with robots located anywhere in the world through direct IP connection
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Robots Showcase -->
+  <section class="robots-showcase">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+      <h2 class="section-title">Available Robots</h2>
+      <p class="section-subtitle">Control different types of specialized robots</p>
+      
+      <div class="robots-grid">
+        <div class="robot-showcase-card" style="border-top: 3px solid #29B6F6;">
+          <span class="robot-icon-large">🤖</span>
+          <h3 style="color: #29B6F6; margin-bottom: 12px; font-family: 'Inter', sans-serif;">Arm Robot</h3>
+          <p style="color: #6C757D;">
+            Precision mechanical robotic arm for manipulation and assembly tasks
+          </p>
+        </div>
+        
+        <div class="robot-showcase-card" style="border-top: 3px solid #00E676;">
+          <img src="/images/robots/pepper1.png" alt="Pepper Robot" style="width: 120px; height: 120px; object-fit: contain; margin: 0 auto 20px; display: block; filter: drop-shadow(0 0 15px rgba(0, 230, 118, 0.4));">
+          <h3 style="color: #00E676; margin-bottom: 12px; font-family: 'Inter', sans-serif;">Pepper Robot</h3>
+          <p style="color: #6C757D;">
+            Humanoid robot with video, audio and movement capabilities for social interaction
+          </p>
+        </div>
+        
+        <div class="robot-showcase-card" style="border-top: 3px solid #FF9100;">
+          <img src="/images/robots/unitreego2.png" alt="Dog Robot" style="width: 150px; height: 150px; object-fit: contain; margin: 0 auto 20px; display: block; filter: drop-shadow(0 0 15px rgba(255, 145, 0, 0.4));">
+          <h3 style="color: #FF9100; margin-bottom: 12px; font-family: 'Inter', sans-serif;">Dog Robot</h3>
+          <p style="color: #6C757D;">
+            Quadruped dog-type robot designed for mobility and exploration on diverse terrains
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p style="color: #B0B0B0; margin-bottom: 12px;">
+      <i class="fas fa-robot"></i> Robot Teleoperation System
+    </p>
+    <p style="color: #6C757D; font-size: 0.9rem;">
+      &copy; 2024 Robot Control. All rights reserved.
+    </p>
+  </footer>
+
+  <script src="/js/main.js"></script>
+</body>
+</html>

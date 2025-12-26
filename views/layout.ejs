@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= typeof title !== 'undefined' ? title : 'Teleoperation Robot System' %></title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  
+  <!-- Styles -->
+  <link rel="stylesheet" href="/css/main.css">
+  
+  <% if (typeof additionalStyles !== 'undefined') { %>
+    <%- additionalStyles %>
+  <% } %>
+  
+  <!-- Dashboard Styles Block -->
+  <% if (typeof dashboardStyles !== 'undefined') { %>
+    <%- dashboardStyles %>
+  <% } %>
+</head>
+<body>
+  <% if (typeof user !== 'undefined' && user) { %>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <h2><i class="fas fa-robot"></i> Robot Control</h2>
+      </div>
+      
+      <nav>
+        <ul class="sidebar-nav">
+          <li>
+            <a href="/dashboard" class="<%= typeof currentPage !== 'undefined' && currentPage === 'dashboard' ? 'active' : '' %>">
+              <i class="fas fa-home"></i> Dashboard
+            </a>
+          </li>
+          <li>
+            <a href="/reservations" class="<%= typeof currentPage !== 'undefined' && currentPage === 'reservations' ? 'active' : '' %>">
+              <i class="fas fa-calendar"></i> Reservations
+            </a>
+          </li>
+          
+          <li><hr style="border-color: rgba(255,255,255,0.1); margin: 16px 0;"></li>
+          
+          <!-- Robots disponibles según permisos -->
+          <% 
+            const robots = [
+              { id: 'arm', name: 'Arm Robot', icon: '🤖', color: 'cyan' },
+              { id: 'pepper', name: 'Pepper Robot', icon: '👤', color: 'green' },
+              { id: 'dog', name: 'Dog Robot', icon: '🐕', color: 'orange' }
+            ];
+            const allowedRobots = user.allowed_robots || [];
+            const isAdmin = user.role === 'admin';
+          %>
+          
+          <% robots.forEach(robot => { %>
+            <% if (isAdmin || allowedRobots.includes(robot.id)) { %>
+              <li>
+                <a href="/robots/<%= robot.id %>" class="<%= typeof currentRobot !== 'undefined' && currentRobot === robot.id ? 'active' : '' %>">
+                  <i class="fas fa-robot"></i> <%= robot.name %>
+                </a>
+              </li>
+            <% } %>
+          <% }); %>
+          
+          <% if (isAdmin) { %>
+            <li><hr style="border-color: rgba(255,255,255,0.1); margin: 16px 0;"></li>
+            <li>
+              <a href="/admin/users" class="<%= typeof currentPage !== 'undefined' && currentPage === 'admin' ? 'active' : '' %>">
+                <i class="fas fa-users-cog"></i> Manage Users
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+      
+      <div class="sidebar-footer">
+        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 12px;">
+          <i class="fas fa-user"></i> <%= user.name %>
+        </p>
+        <a href="/auth/logout" class="btn-neon btn-neon-cyan" style="width: 100%; text-align: center;">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </a>
+        <p class="text-muted" style="font-size: 0.75rem; margin-top: 16px; text-align: center;">
+          &copy; 2024 Robot Control
+        </p>
+      </div>
+    </aside>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+      <% if (typeof body !== 'undefined') { %>
+        <%- body %>
+      <% } %>
+      <% if (typeof dashboardBody !== 'undefined') { %>
+        <%- dashboardBody %>
+      <% } %>
+      <!-- Dashboard content will be inserted here via include -->
+  <% } else { %>
+    <!-- No sidebar for authentication pages -->
+    <main style="min-height: 100vh;">
+      <% if (typeof body !== 'undefined') { %>
+        <%- body %>
+      <% } %>
+    </main>
+  <% } %>
+  
+  <!-- Additional Content Block -->
+  <% if (typeof additionalContent !== 'undefined') { %>
+    <%- additionalContent %>
+  <% } %>
+  
+  <!-- Scripts -->
+  <script src="/js/main.js"></script>
+  
+  <% if (typeof additionalScripts !== 'undefined') { %>
+    <%- additionalScripts %>
+  <% } %>
+  
+  <!-- Dashboard Scripts Block -->
+  <% if (typeof dashboardScripts !== 'undefined') { %>
+    <%- dashboardScripts %>
+  <% } %>
+  
+  <% if (typeof currentPage !== 'undefined' && currentPage === 'dashboard') { %>
+    <script src="/js/dashboard.js"></script>
+  <% } %>
+</body>
+</html>
+

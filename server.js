@@ -1,0 +1,111 @@
+/**
+ * Servidor Principal - Sistema de Teleoperación de Robots
+ * Stack: Node.js + Express + EJS + MongoDB
+ */
+
+import express from 'express';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
+import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import connectDB from './config/db.js';
+import { authRoutes } from './routes/authRoutes.js';
+import dashboardRoutes from './routes/dashboardRoutes.js';
+import reservationRoutes from './routes/reservationRoutes.js';
+import robotRoutes from './routes/robotRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
+
+// Configurar __dirname para ES Modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Cargar variables de entorno
+dotenv.config();
+
+// Inicializar Express
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Conectar a MongoDB
+connectDB();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Configurar sesiones con MongoDB
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+      mongoUrl: process.env.MONGO_URI,
+      ttl: 14 * 24 * 60 * 60, // 14 días
+    }),
+    cookie: {
+      secure: process.env.NODE_ENV === 'production',
+      httpOnly: true,
+      maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
+    },
+  })
+);
+
+// Configurar EJS como motor de plantillas
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+// Archivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Middleware para pasar datos del usuario a las vistas
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  res.locals.isAuthenticated = !!req.session.user;
+  next();
+});
+
+// Rutas
+app.use('/auth', authRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/reservations', reservationRoutes);
+app.use('/robots', robotRoutes);
+app.use('/admin', adminRoutes);
+
+// Ruta raíz - mostrar landing page si no está autenticado, sino redirigir a dashboard
+app.get('/', (req, res) => {
+  if (req.session.user) {
+    res.redirect('/dashboard');
+  } else {
+    res.render('landing', {
+      title: 'Robot Teleoperation System',
+    });
+  }
+});
+
+// Manejo de errores 404
+app.use((req, res) => {
+  res.status(404).render('error', {
+    title: '404 - Página no encontrada',
+    message: 'La página que buscas no existe',
+    user: req.session.user || null,
+  });
+});
+
+// Manejo de errores del servidor
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(500).render('error', {
+    title: '500 - Error del servidor',
+    message: 'Ocurrió un error en el servidor',
+    user: req.session.user || null,
+  });
+});
+
+// Iniciar servidor
+app.listen(PORT, () => {
+  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+});
+

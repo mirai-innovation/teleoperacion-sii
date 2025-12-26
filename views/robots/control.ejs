@@ -1,0 +1,107 @@
+<%- include('../layout', { 
+  title: typeof robot !== 'undefined' ? `${robot.displayName} - Control` : 'Robot Control',
+  currentRobot: typeof robot !== 'undefined' ? robot.id : null,
+  body: `
+    <div class="fade-in">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h1 style="color: ${typeof robot !== 'undefined' ? robot.color : '#fff'}; margin-bottom: 8px;">
+            <i class="fas fa-robot"></i> ${typeof robot !== 'undefined' ? robot.displayName : 'Robot Control'}
+          </h1>
+          <p class="text-muted">${typeof robot !== 'undefined' ? robot.description : 'Remote robot control'}</p>
+        </div>
+        <a href="/dashboard" class="btn-neon" style="border-color: var(--text-secondary); color: var(--text-secondary);">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </div>
+      
+      <div class="card" style="padding: 0; overflow: hidden;">
+        <div style="background: ${typeof robot !== 'undefined' ? robot.color + '22' : 'rgba(255,255,255,0.1)'}; padding: 16px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+          <h3 style="margin: 0; color: ${typeof robot !== 'undefined' ? robot.color : '#fff'};">
+            <i class="fas fa-desktop"></i> Control Interface
+          </h3>
+        </div>
+        <div style="position: relative; width: 100%; height: calc(100vh - 300px); min-height: 600px;">
+          <iframe 
+            id="robotFrame"
+            src="${typeof robot !== 'undefined' ? robot.fullUrl : '#'}"
+            style="width: 100%; height: 100%; border: none; background: var(--bg-primary);"
+            allow="camera; microphone; fullscreen"
+            title="Robot Control Interface"
+          ></iframe>
+          <div id="loadingOverlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg-primary); display: flex; align-items: center; justify-content: center; z-index: 10;">
+            <div style="text-align: center;">
+              <div style="font-size: 3rem; margin-bottom: 16px;">🤖</div>
+              <p class="text-muted">Loading control interface...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div style="margin-top: 24px; text-align: center;">
+        <button id="endSessionBtn" class="btn-neon" style="border-color: #ff6b6b; color: #ff6b6b;">
+          <i class="fas fa-stop"></i> End Session
+        </button>
+      </div>
+    </div>
+    
+    <script>
+      // Ocultar loading cuando el iframe cargue
+      const robotFrame = document.getElementById('robotFrame');
+      const loadingOverlay = document.getElementById('loadingOverlay');
+      
+      robotFrame.addEventListener('load', () => {
+        setTimeout(() => {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 300);
+        }, 1000);
+      });
+      
+      // Handle loading errors
+      robotFrame.addEventListener('error', () => {
+        loadingOverlay.innerHTML = \`
+          <div style="text-align: center; padding: 32px;">
+            <div style="font-size: 3rem; margin-bottom: 16px;">⚠️</div>
+            <h3 style="margin-bottom: 12px;">Error loading robot</h3>
+            <p class="text-muted">The robot server is not available. Please check the connection.</p>
+            <a href="/dashboard" class="btn-neon btn-neon-cyan" style="margin-top: 20px;">
+              <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+          </div>
+        \`;
+      });
+      
+      // End session
+      document.getElementById('endSessionBtn').addEventListener('click', async () => {
+        if (!confirm('Are you sure you want to end the session?')) return;
+        
+        try {
+          const response = await fetch(\`/robots/${typeof robot !== 'undefined' ? robot.id : ''}/end-session\`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            window.location.href = '/dashboard';
+          } else {
+            alert('Error ending session');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          // Redirigir de todas formas
+          window.location.href = '/dashboard';
+        }
+      });
+      
+      // Register automatic completion on close/reload
+      window.addEventListener('beforeunload', async () => {
+        navigator.sendBeacon(\`/robots/${typeof robot !== 'undefined' ? robot.id : ''}/end-session\`, JSON.stringify({}));
+      });
+    </script>
+  `
+}) %>
+

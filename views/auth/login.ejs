@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - Robot Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/main.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #121212;
+      color: #FFFFFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Efecto Grid Técnico */
+    .tech-grid-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: 
+        linear-gradient(rgba(41, 182, 246, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(41, 182, 246, 0.03) 1px, transparent 1px);
+      background-size: 50px 50px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Efecto Glow Radial */
+    .glow-effects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .glow-effects::before {
+      content: '';
+      position: absolute;
+      top: -200px;
+      left: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(41, 182, 246, 0.15) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    .glow-effects::after {
+      content: '';
+      position: absolute;
+      bottom: -200px;
+      right: -200px;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(41, 182, 246, 0.1) 0%, transparent 70%);
+      border-radius: 50%;
+    }
+
+    /* Contenedor Principal Centrado */
+    .auth-container {
+      width: 100%;
+      max-width: 500px;
+      padding: 40px 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Logo Container con Padding Superior */
+    .logo-container {
+      text-align: center;
+      padding-top: 40px;
+      padding-bottom: 32px;
+      margin-bottom: 24px;
+    }
+
+    .logo-icon {
+      font-size: 4rem;
+      color: #29B6F6;
+      margin-bottom: 16px;
+      display: block;
+      text-shadow: 0 0 20px rgba(41, 182, 246, 0.5);
+    }
+
+    /* Título Principal */
+    .auth-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      margin-bottom: 12px;
+      background: linear-gradient(180deg, #FFFFFF 0%, #B0B0B0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      text-align: center;
+    }
+
+    /* Subtítulo con Fuente Monoespaciada */
+    .auth-subtitle {
+      font-size: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: #6C757D;
+      text-align: center;
+      margin-bottom: 40px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Card Dark Tech */
+    .auth-card {
+      background: #1E1E1E;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    .form-group {
+      margin-bottom: 24px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 8px;
+      color: #FFFFFF;
+      font-weight: 500;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 14px 16px;
+      background: #121212;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #29B6F6;
+      box-shadow: 0 0 10px rgba(41, 182, 246, 0.3);
+    }
+
+    .btn-primary-neon {
+      width: 100%;
+      padding: 16px;
+      background: #29B6F6;
+      color: #121212;
+      border: 2px solid #29B6F6;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-family: 'Inter', sans-serif;
+      box-shadow: 0 0 20px rgba(41, 182, 246, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .btn-primary-neon:hover {
+      box-shadow: 0 0 30px rgba(41, 182, 246, 0.6);
+      transform: translateY(-2px);
+    }
+
+    .alert {
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .alert-error {
+      background: rgba(255, 107, 107, 0.2);
+      border: 1px solid rgba(255, 107, 107, 0.5);
+      color: #ff6b6b;
+    }
+
+    .alert-success {
+      background: rgba(81, 207, 102, 0.2);
+      border: 1px solid rgba(81, 207, 102, 0.5);
+      color: #51cf66;
+    }
+
+    .auth-link {
+      text-align: center;
+      margin-top: 24px;
+      color: #B0B0B0;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .auth-link a {
+      color: #29B6F6;
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    .auth-link a:hover {
+      color: #00E676;
+      text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+    }
+
+    @media (max-width: 768px) {
+      .auth-title {
+        font-size: 2.5rem;
+      }
+
+      .auth-card {
+        padding: 32px 24px;
+      }
+
+      .logo-container {
+        padding-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Efectos de Fondo -->
+  <div class="tech-grid-bg"></div>
+  <div class="glow-effects"></div>
+
+  <div class="auth-container">
+    <!-- Logo con Padding Superior -->
+    <div class="logo-container">
+      <span class="logo-icon">
+        <i class="fas fa-robot"></i>
+      </span>
+    </div>
+
+    <!-- Título Principal -->
+    <h1 class="auth-title">Robot Control</h1>
+
+    <!-- Subtítulo -->
+    <p class="auth-subtitle">Teleoperation System</p>
+
+    <!-- Card Dark Tech -->
+    <div class="auth-card">
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error">
+          <i class="fas fa-exclamation-circle"></i>
+          <span><%= error %></span>
+        </div>
+      <% } %>
+      
+      <% if (typeof registered !== 'undefined' && registered) { %>
+        <div class="alert alert-success">
+          <i class="fas fa-check-circle"></i>
+          <span>Registration successful. Please sign in.</span>
+        </div>
+      <% } %>
+      
+      <form action="/auth/login" method="POST">
+        <div class="form-group">
+          <label class="form-label" for="email">
+            <i class="fas fa-envelope"></i> Email
+          </label>
+          <input type="email" id="email" name="email" class="form-control" required autofocus>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label" for="password">
+            <i class="fas fa-lock"></i> Password
+          </label>
+          <input type="password" id="password" name="password" class="form-control" required>
+        </div>
+        
+        <button type="submit" class="btn-primary-neon">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+      </form>
+      
+      <p class="auth-link">
+        Don't have an account? <a href="/auth/register">Sign up here</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

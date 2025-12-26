@@ -1,0 +1,17 @@
+<%- include('layout', { 
+  title: typeof title !== 'undefined' ? title : 'Error',
+  body: `
+    <div style="min-height: 60vh; display: flex; align-items: center; justify-content: center; text-align: center;">
+      <div>
+        <h1 style="font-size: 4rem; margin-bottom: 16px; color: var(--neon-cyan);">${typeof title !== 'undefined' ? title.split(' - ')[0] : 'Error'}</h1>
+        <p style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 32px;">
+          ${typeof message !== 'undefined' ? message : 'An error occurred'}
+        </p>
+        <a href="/dashboard" class="btn-neon btn-neon-cyan">
+          <i class="fas fa-home"></i> Back to Dashboard
+        </a>
+      </div>
+    </div>
+  `
+}) %>
+
