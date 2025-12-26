@@ -35,6 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Configurar sesiones con MongoDB
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
@@ -43,12 +44,15 @@ app.use(
     store: MongoStore.create({
       mongoUrl: process.env.MONGO_URI,
       ttl: 14 * 24 * 60 * 60, // 14 días
+      touchAfter: 24 * 3600, // Lazy session update
     }),
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProduction, // true en producción (HTTPS)
       httpOnly: true,
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
+      sameSite: isProduction ? 'none' : 'lax', // 'none' necesario para Vercel/producción
     },
+    name: 'sessionId', // Nombre personalizado para la cookie
   })
 );
 
@@ -104,8 +108,17 @@ app.use((err, req, res, next) => {
 });
 
 // Iniciar servidor
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-});
+// En Vercel, no necesitamos app.listen() - Vercel maneja esto automáticamente
+if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`📊 Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔐 Session Secret configurado: ${process.env.SESSION_SECRET ? 'Sí' : 'No'}`);
+    console.log(`🍪 Cookie secure: ${isProduction ? 'true (HTTPS)' : 'false (HTTP)'}`);
+    console.log(`🍪 Cookie sameSite: ${isProduction ? 'none' : 'lax'}`);
+  });
+}
+
+// Exportar para Vercel
+export default app;
 

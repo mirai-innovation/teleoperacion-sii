@@ -33,7 +33,10 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    console.log('Login attempt for:', email);
+
     if (!email || !password) {
+      console.log('Login failed: Missing email or password');
       return res.render('auth/login', {
         title: 'Login',
         error: 'Email and password are required',
@@ -44,6 +47,7 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
     if (!user) {
+      console.log('Login failed: User not found');
       return res.render('auth/login', {
         title: 'Login',
         error: 'Invalid credentials',
@@ -54,6 +58,7 @@ router.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
+      console.log('Login failed: Invalid password');
       return res.render('auth/login', {
         title: 'Login',
         error: 'Invalid credentials',
@@ -62,6 +67,7 @@ router.post('/login', async (req, res) => {
 
     // Verify active account
     if (!user.isActive) {
+      console.log('Login failed: Account inactive');
       return res.render('auth/login', {
         title: 'Login',
         error: 'Your account is inactive. Contact the administrator.',
@@ -77,7 +83,18 @@ router.post('/login', async (req, res) => {
       allowed_robots: user.allowed_robots || [],
     };
 
-    res.redirect('/dashboard');
+    // Guardar sesión explícitamente antes de redirigir
+    req.session.save((err) => {
+      if (err) {
+        console.error('Error saving session:', err);
+        return res.render('auth/login', {
+          title: 'Login',
+          error: 'Error signing in. Please try again.',
+        });
+      }
+      console.log('Session saved successfully for user:', user.email);
+      res.redirect('/dashboard');
+    });
   } catch (error) {
     console.error('Error in login:', error);
     res.render('auth/login', {
