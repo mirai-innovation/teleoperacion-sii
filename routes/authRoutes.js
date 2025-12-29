@@ -92,17 +92,21 @@ router.post('/login', async (req, res) => {
       allowed_robots: user.allowed_robots || [],
     };
 
+    // Marcar la sesión como modificada para forzar el guardado
+    req.session.touch();
+
     // Guardar sesión explícitamente antes de redirigir
     req.session.save((err) => {
       if (err) {
-        console.error('Error saving session:', err);
+        console.error('❌ Error saving session:', err);
+        console.error('Error details:', JSON.stringify(err, Object.getOwnPropertyNames(err)));
         return res.render('auth/login', {
           title: 'Login',
           error: 'Error signing in. Please try again.',
         });
       }
       
-      console.log('Session saved successfully for user:', user.email);
+      console.log('✅ Session save callback called for user:', user.email);
       console.log('Session ID:', req.sessionID);
       console.log('Session data:', JSON.stringify(req.session.user));
       
@@ -110,17 +114,18 @@ router.post('/login', async (req, res) => {
       const setCookieHeader = res.getHeader('Set-Cookie');
       console.log('Set-Cookie header:', setCookieHeader);
       
-      // Verificar que la sesión se guardó en MongoDB
-      const store = req.sessionStore;
-      
       // Verificar inmediatamente si la sesión está en el store
+      const store = req.sessionStore;
       store.get(req.sessionID, (err, session) => {
         if (err) {
-          console.error('Error verifying session in store:', err);
+          console.error('❌ Error verifying session in store:', err);
         } else {
-          console.log('Session verified in store:', session ? '✅ Found' : '❌ Not found');
           if (session) {
+            console.log('✅ Session verified in store immediately after save');
             console.log('Session data in store:', JSON.stringify(session));
+          } else {
+            console.log('⚠️ WARNING: Session not found in store immediately after save!');
+            console.log('This may indicate a MongoDB write issue or timing problem.');
           }
         }
       });

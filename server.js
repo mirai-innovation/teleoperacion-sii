@@ -9,6 +9,7 @@ import MongoStore from 'connect-mongo';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import { authRoutes } from './routes/authRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
@@ -36,11 +37,44 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configurar sesiones con MongoDB
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Crear el store - usar mongoUrl directamente para mejor compatibilidad en Vercel
 const sessionStore = MongoStore.create({
   mongoUrl: process.env.MONGO_URI,
   ttl: 14 * 24 * 60 * 60, // 14 días
   touchAfter: 24 * 3600, // Lazy session update
   autoRemove: 'native', // Usar el método nativo de MongoDB para limpiar sesiones expiradas
+  stringify: false, // No stringify, guardar como objeto
+  collectionName: 'sessions', // Nombre de la colección
+  // Opciones adicionales para Vercel/serverless
+  mongoOptions: {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    // Asegurar que la conexión se mantenga activa
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
+  },
+});
+
+// Event listeners para debug del store
+sessionStore.on('create', (sessionId) => {
+  console.log('✅ Session created in store:', sessionId);
+});
+
+sessionStore.on('update', (sessionId) => {
+  console.log('✅ Session updated in store:', sessionId);
+});
+
+sessionStore.on('set', (sessionId) => {
+  console.log('✅ Session set in store:', sessionId);
+});
+
+sessionStore.on('destroy', (sessionId) => {
+  console.log('🗑️ Session destroyed in store:', sessionId);
+});
+
+sessionStore.on('error', (error) => {
+  console.error('❌ Session store error:', error);
 });
 
 app.use(
