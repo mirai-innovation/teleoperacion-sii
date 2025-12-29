@@ -97,9 +97,15 @@ app.use(
 );
 
 // Middleware para restaurar sesión si los datos no están cargados
-app.use(async (req, res, next) => {
+app.use((req, res, next) => {
+  // Si ya hay datos de usuario, continuar
+  if (req.session && req.session.user) {
+    return next();
+  }
+  
   // Verificar la cookie directamente
   const cookieSessionId = req.cookies?.sessionId;
+  let handled = false;
   
   // Si hay una cookie con sessionID pero req.sessionID es diferente, hay un problema
   if (cookieSessionId && req.sessionID && cookieSessionId !== req.sessionID) {
@@ -110,8 +116,11 @@ app.use(async (req, res, next) => {
     
     // Intentar cargar la sesión usando el ID de la cookie
     sessionStore.get(cookieSessionId, (err, session) => {
+      if (handled) return;
+      
       if (err) {
         console.error('❌ Error getting session from store:', err);
+        handled = true;
         return next();
       }
       
@@ -125,47 +134,67 @@ app.use(async (req, res, next) => {
           } else {
             console.log('✅ Session restored successfully');
           }
-          next();
+          if (!handled) {
+            handled = true;
+            next();
+          }
         });
         return;
       } else {
         console.log('❌ Session from cookie not found in MongoDB');
-      }
-    });
-  }
-  
-  // Solo verificar si hay un sessionID pero no hay datos de usuario
-  if (req.sessionID && req.session && !req.session.user) {
-    console.log('⚠️ Session exists but user data missing, attempting to restore...');
-    console.log('Session ID:', req.sessionID);
-    
-    // Intentar recuperar la sesión desde MongoDB
-    sessionStore.get(req.sessionID, (err, session) => {
-      if (err) {
-        console.error('❌ Error getting session from store:', err);
-        return next();
-      }
-      
-      if (session && session.user) {
-        console.log('✅ Restoring user data from MongoDB');
-        // Restaurar los datos del usuario en la sesión
-        req.session.user = session.user;
-        // Guardar la sesión restaurada
-        req.session.save((saveErr) => {
-          if (saveErr) {
-            console.error('❌ Error saving restored session:', saveErr);
-          } else {
-            console.log('✅ Session restored successfully');
-          }
-          next();
-        });
-      } else {
-        console.log('❌ Session not found in MongoDB or has no user data');
-        next();
+        // Continuar con la verificación normal
+        checkSessionData();
       }
     });
   } else {
-    next();
+    // Verificación normal si no hay mismatch
+    checkSessionData();
+  }
+  
+  function checkSessionData() {
+    if (handled) return;
+    
+    // Solo verificar si hay un sessionID pero no hay datos de usuario
+    if (req.sessionID && req.session && !req.session.user) {
+      console.log('⚠️ Session exists but user data missing, attempting to restore...');
+      console.log('Session ID:', req.sessionID);
+      
+      // Intentar recuperar la sesión desde MongoDB
+      sessionStore.get(req.sessionID, (err, session) => {
+        if (handled) return;
+        
+        if (err) {
+          console.error('❌ Error getting session from store:', err);
+          handled = true;
+          return next();
+        }
+        
+        if (session && session.user) {
+          console.log('✅ Restoring user data from MongoDB');
+          // Restaurar los datos del usuario en la sesión
+          req.session.user = session.user;
+          // Guardar la sesión restaurada
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('❌ Error saving restored session:', saveErr);
+            } else {
+              console.log('✅ Session restored successfully');
+            }
+            if (!handled) {
+              handled = true;
+              next();
+            }
+          });
+        } else {
+          console.log('❌ Session not found in MongoDB or has no user data');
+          handled = true;
+          next();
+        }
+      });
+    } else {
+      handled = true;
+      next();
+    }
   }
 });
 
