@@ -6,6 +6,7 @@
 import express from 'express';
 import session from 'express-session';
 import MongoStore from 'connect-mongo';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,6 +33,7 @@ const PORT = process.env.PORT || 3000;
 connectDB();
 
 // Middleware
+app.use(cookieParser()); // Necesario para leer cookies correctamente
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -96,6 +98,42 @@ app.use(
 
 // Middleware para restaurar sesión si los datos no están cargados
 app.use(async (req, res, next) => {
+  // Verificar la cookie directamente
+  const cookieSessionId = req.cookies?.sessionId;
+  
+  // Si hay una cookie con sessionID pero req.sessionID es diferente, hay un problema
+  if (cookieSessionId && req.sessionID && cookieSessionId !== req.sessionID) {
+    console.log('⚠️ Session ID mismatch detected!');
+    console.log('  - Cookie sessionId:', cookieSessionId);
+    console.log('  - req.sessionID:', req.sessionID);
+    console.log('  - Attempting to load session from cookie ID...');
+    
+    // Intentar cargar la sesión usando el ID de la cookie
+    sessionStore.get(cookieSessionId, (err, session) => {
+      if (err) {
+        console.error('❌ Error getting session from store:', err);
+        return next();
+      }
+      
+      if (session && session.user) {
+        console.log('✅ Found session with user data, restoring to current session...');
+        // Copiar los datos a la sesión actual
+        req.session.user = session.user;
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('❌ Error saving restored session:', saveErr);
+          } else {
+            console.log('✅ Session restored successfully');
+          }
+          next();
+        });
+        return;
+      } else {
+        console.log('❌ Session from cookie not found in MongoDB');
+      }
+    });
+  }
+  
   // Solo verificar si hay un sessionID pero no hay datos de usuario
   if (req.sessionID && req.session && !req.session.user) {
     console.log('⚠️ Session exists but user data missing, attempting to restore...');
