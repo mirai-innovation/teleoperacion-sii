@@ -50,7 +50,9 @@ app.use(
       secure: isProduction, // true en producción (HTTPS)
       httpOnly: true,
       maxAge: 14 * 24 * 60 * 60 * 1000, // 14 días
-      sameSite: isProduction ? 'none' : 'lax', // 'none' necesario para Vercel/producción
+      sameSite: isProduction ? 'lax' : 'lax', // 'lax' funciona mejor en Vercel
+      path: '/', // Asegurar que la cookie esté disponible en todas las rutas
+      // No especificar domain para que use el dominio actual automáticamente
     },
     name: 'sessionId', // Nombre personalizado para la cookie
   })

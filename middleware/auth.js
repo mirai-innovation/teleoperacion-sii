@@ -4,9 +4,18 @@
  */
 
 export const requireAuth = (req, res, next) => {
+  console.log('requireAuth middleware - Session check:');
+  console.log('  - req.session exists:', !!req.session);
+  console.log('  - req.session.user exists:', !!req.session.user);
+  console.log('  - req.sessionID:', req.sessionID);
+  console.log('  - Cookies received:', req.headers.cookie);
+  
   if (!req.session.user) {
+    console.log('  - ❌ No user in session, redirecting to login');
     return res.redirect('/auth/login');
   }
+  
+  console.log('  - ✅ User authenticated:', req.session.user.email);
   next();
 };
 

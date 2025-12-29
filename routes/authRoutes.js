@@ -93,6 +93,13 @@ router.post('/login', async (req, res) => {
         });
       }
       console.log('Session saved successfully for user:', user.email);
+      console.log('Session ID:', req.sessionID);
+      console.log('Session data:', JSON.stringify(req.session.user));
+      
+      // Verificar que la cookie se establezca correctamente
+      const setCookieHeader = res.getHeader('Set-Cookie');
+      console.log('Set-Cookie header:', setCookieHeader);
+      
       res.redirect('/dashboard');
     });
   } catch (error) {
