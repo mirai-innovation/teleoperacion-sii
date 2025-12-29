@@ -83,59 +83,65 @@ router.post('/login', async (req, res) => {
       allowed_robots: user.allowed_robots || [],
     };
 
-    // Regenerar el ID de sesión para seguridad
-    req.session.regenerate((err) => {
+    // Crear sesión directamente (sin regenerate para evitar problemas en Vercel)
+    req.session.user = {
+      id: user._id.toString(),
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      allowed_robots: user.allowed_robots || [],
+    };
+
+    // Guardar sesión explícitamente antes de redirigir
+    req.session.save((err) => {
       if (err) {
-        console.error('Error regenerating session:', err);
+        console.error('Error saving session:', err);
         return res.render('auth/login', {
           title: 'Login',
           error: 'Error signing in. Please try again.',
         });
       }
-
-      // Crear sesión después de regenerar
-      req.session.user = {
-        id: user._id.toString(),
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        allowed_robots: user.allowed_robots || [],
-      };
-
-      // Guardar sesión explícitamente antes de redirigir
-      req.session.save((err) => {
+      
+      console.log('Session saved successfully for user:', user.email);
+      console.log('Session ID:', req.sessionID);
+      console.log('Session data:', JSON.stringify(req.session.user));
+      
+      // Verificar que la cookie se establezca correctamente
+      const setCookieHeader = res.getHeader('Set-Cookie');
+      console.log('Set-Cookie header:', setCookieHeader);
+      
+      // Verificar que la sesión se guardó en MongoDB
+      const store = req.sessionStore;
+      
+      // Verificar inmediatamente si la sesión está en el store
+      store.get(req.sessionID, (err, session) => {
         if (err) {
-          console.error('Error saving session:', err);
-          return res.render('auth/login', {
-            title: 'Login',
-            error: 'Error signing in. Please try again.',
-          });
+          console.error('Error verifying session in store:', err);
+        } else {
+          console.log('Session verified in store:', session ? '✅ Found' : '❌ Not found');
+          if (session) {
+            console.log('Session data in store:', JSON.stringify(session));
+          }
         }
-        
-        console.log('Session saved successfully for user:', user.email);
-        console.log('Session ID:', req.sessionID);
-        console.log('Session data:', JSON.stringify(req.session.user));
-        
-        // Verificar que la cookie se establezca correctamente
-        const setCookieHeader = res.getHeader('Set-Cookie');
-        console.log('Set-Cookie header:', setCookieHeader);
-        
-        // Si la cookie no se estableció, establecerla manualmente
-        if (!setCookieHeader || setCookieHeader.length === 0) {
-          console.log('⚠️ Cookie not set automatically, setting manually...');
-          const cookieOptions = {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 14 * 24 * 60 * 60 * 1000,
-            path: '/',
-          };
-          res.cookie('sessionId', req.sessionID, cookieOptions);
-          console.log('✅ Cookie set manually with sessionID:', req.sessionID);
-        }
-        
-        res.redirect('/dashboard');
       });
+      
+      // Forzar el establecimiento de la cookie si no se estableció automáticamente
+      if (!setCookieHeader || (Array.isArray(setCookieHeader) && setCookieHeader.length === 0)) {
+        console.log('⚠️ Cookie not set automatically, setting manually...');
+        const cookieOptions = {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 14 * 24 * 60 * 60 * 1000,
+          path: '/',
+        };
+        res.cookie('sessionId', req.sessionID, cookieOptions);
+        console.log('✅ Cookie set manually with sessionID:', req.sessionID);
+      } else {
+        console.log('✅ Cookie set automatically:', Array.isArray(setCookieHeader) ? setCookieHeader.join(', ') : setCookieHeader);
+      }
+      
+      res.redirect('/dashboard');
     });
   } catch (error) {
     console.error('Error in login:', error);

@@ -36,17 +36,19 @@ app.use(express.urlencoded({ extended: true }));
 
 // Configurar sesiones con MongoDB
 const isProduction = process.env.NODE_ENV === 'production';
+const sessionStore = MongoStore.create({
+  mongoUrl: process.env.MONGO_URI,
+  ttl: 14 * 24 * 60 * 60, // 14 días
+  touchAfter: 24 * 3600, // Lazy session update
+  autoRemove: 'native', // Usar el método nativo de MongoDB para limpiar sesiones expiradas
+});
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-in-production',
     resave: true, // Cambiar a true para Vercel
     saveUninitialized: true, // Cambiar a true para asegurar que se establezca la cookie
-    store: MongoStore.create({
-      mongoUrl: process.env.MONGO_URI,
-      ttl: 14 * 24 * 60 * 60, // 14 días
-      touchAfter: 24 * 3600, // Lazy session update
-      autoRemove: 'native', // Usar el método nativo de MongoDB para limpiar sesiones expiradas
-    }),
+    store: sessionStore,
     cookie: {
       secure: isProduction, // true en producción (HTTPS)
       httpOnly: true,
@@ -58,6 +60,34 @@ app.use(
     name: 'sessionId', // Nombre personalizado para la cookie
   })
 );
+
+// Middleware para debug de sesiones (solo en desarrollo o para debugging)
+app.use((req, res, next) => {
+  if (req.path === '/dashboard' || req.path.startsWith('/auth')) {
+    console.log('=== Session Debug ===');
+    console.log('Path:', req.path);
+    console.log('Session ID from cookie:', req.sessionID);
+    console.log('Session exists:', !!req.session);
+    console.log('Session user:', req.session?.user ? 'exists' : 'missing');
+    console.log('Cookies in request:', req.headers.cookie);
+    
+    // Verificar si la sesión existe en MongoDB
+    if (req.sessionID) {
+      sessionStore.get(req.sessionID, (err, session) => {
+        if (err) {
+          console.log('Error getting session from store:', err);
+        } else {
+          console.log('Session in MongoDB:', session ? 'found' : 'not found');
+          if (session) {
+            console.log('Session data in MongoDB:', JSON.stringify(session));
+          }
+        }
+      });
+    }
+    console.log('===================');
+  }
+  next();
+});
 
 // Configurar EJS como motor de plantillas
 app.set('view engine', 'ejs');
